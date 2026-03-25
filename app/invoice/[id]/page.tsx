@@ -43,32 +43,43 @@ export default function InvoicePreviewPage() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!invoice) return;
+    if (!invoice || !invoiceRef.current) return;
     setDownloading(true);
 
     try {
-      const response = await fetch(`/api/generate-pdf?id=${invoice._id}`);
-      
-      if (!response.ok) {
-        throw new Error("Failed to generate PDF on server");
-      }
+      // Import libraries dynamically
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
 
-      // Read the PDF buffer as a Blob
-      const blob = await response.blob();
+      const element = invoiceRef.current;
       
-      // Create a temporary link to trigger the download
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Invoice_${invoice.invoiceNumber.replace(/[/]/g, "_")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      
-      // Cleanup
-      window.URL.revokeObjectURL(url);
-      a.remove();
-    } catch (error) {
-      alert("Failed to download PDF. Please try again or use the 'Print' button.");
+      // Wait a moment for any final font rendering
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const canvas = await html2canvas(element, {
+        scale: 2, // 2 is usually enough and more stable
+        useCORS: true,
+        logging: true, // Enable logging for debugging
+        backgroundColor: "#ffffff",
+        allowTaint: true,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
+      pdf.save(`Invoice_${invoice.invoiceNumber.replace(/[/]/g, "_")}.pdf`);
+
+    } catch (error: any) {
+      console.error("Detailed PDF Error:", error);
+      alert(`Bhai, PDF nahi ban paa raha: ${error.message || "Unknown Error"}. Aap 'Print' button daba kar 'Save as PDF' karlo, wo best quality dega.`);
     } finally {
       setDownloading(false);
     }
@@ -86,7 +97,7 @@ export default function InvoicePreviewPage() {
   if (!invoice) return null;
 
   return (
-    <main className="min-h-screen bg-gray-100 py-8 print:py-0 print:bg-white">
+    <main className="min-h-screen py-8 print:py-0" style={{ backgroundColor: "#f3f4f6" }}>
       {/* Controls Container (Hidden on Print) */}
       <div className="max-w-4xl mx-auto mb-6 px-4 print:hidden flex flex-col sm:flex-row justify-between items-center gap-4">
         <button
