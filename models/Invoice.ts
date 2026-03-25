@@ -10,6 +10,7 @@ export interface IInvoiceItem {
   taxable: number;
   cgst: number;
   sgst: number;
+  igst: number;
   total: number;
 }
 
@@ -17,12 +18,19 @@ export interface IInvoice extends Document {
   customerName: string;
   address: string;
   gst: string;
+  customerContact: string;
+  shippingName: string;
+  shippingAddress: string;
+  shippingGst: string;
+  shippingContact: string;
+  ewayBill: string;
   invoiceNumber: string;
   date: Date;
   items: IInvoiceItem[];
   subtotal: number;
   cgstTotal: number;
   sgstTotal: number;
+  igstTotal: number;
   grandTotal: number;
   createdAt: Date;
 }
@@ -37,6 +45,7 @@ const ItemSchema = new Schema<IInvoiceItem>({
   taxable: { type: Number, required: true },
   cgst: { type: Number, required: true },
   sgst: { type: Number, required: true },
+  igst: { type: Number, required: true, default: 0 },
   total: { type: Number, required: true },
 });
 
@@ -44,12 +53,19 @@ const InvoiceSchema = new Schema<IInvoice>({
   customerName: { type: String, required: true },
   address: { type: String, required: true },
   gst: { type: String, required: false },
+  customerContact: { type: String, required: false },
+  shippingName: { type: String, required: false },
+  shippingAddress: { type: String, required: false },
+  shippingGst: { type: String, required: false },
+  shippingContact: { type: String, required: false },
+  ewayBill: { type: String, required: false },
   invoiceNumber: { type: String, required: true, unique: true },
   date: { type: Date, required: true },
   items: { type: [ItemSchema], required: true },
   subtotal: { type: Number, required: true },
   cgstTotal: { type: Number, required: true },
   sgstTotal: { type: Number, required: true },
+  igstTotal: { type: Number, required: true, default: 0 },
   grandTotal: { type: Number, required: true },
   createdAt: { type: Date, default: Date.now },
 });

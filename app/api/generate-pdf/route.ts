@@ -27,9 +27,26 @@ export async function GET(req: Request) {
     
     const page = await browser.newPage();
     
-    // Navigate to the invoice page and wait for network connections to finish
-    // We use networkidle2 instead of networkidle0 because Next.js dev server keeps a websocket open
-    await page.goto(invoiceUrl, { waitUntil: 'networkidle2' });
+    // To set localStorage, we first need to be on the same domain
+    await page.goto(baseUrl, { waitUntil: 'networkidle2' });
+    await page.evaluate(() => {
+      localStorage.setItem("isLoggedIn", "true");
+    });
+    
+    // Now navigate to the actual invoice page
+    await page.goto(invoiceUrl, { waitUntil: 'networkidle0' });
+
+    // Inject CSS to ensure only the invoice is rendered and fits perfectly
+    await page.addStyleTag({
+      content: `
+        @page { size: A4; margin: 0; }
+        body, html { margin: 0 !important; padding: 0 !important; height: auto !important; min-height: auto !important; background: white !important; }
+        main { margin: 0 !important; padding: 0 !important; min-height: auto !important; height: auto !important; }
+        .print\\:hidden { display: none !important; }
+        /* Hide everything except the invoice template container */
+        body > *:not(main), main > *:not(div:last-child) { display: none !important; }
+      `
+    });
 
     // Generate high-quality vector PDF
     const pdfBuffer = await page.pdf({
