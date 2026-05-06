@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Save, FileText, Building2 } from "lucide-react";
+import { PlusCircle, Save, FileText, Building2, Search, X, User, History } from "lucide-react";
 import ItemRow from "./ItemRow";
 import { IInvoiceItem } from "@/models/Invoice";
 import { SELLERS, SellerKey } from "@/lib/constants";
@@ -22,6 +22,10 @@ export default function InvoiceForm() {
   const [shippingGst, setShippingGst] = useState("");
   const [shippingContact, setShippingContact] = useState("");
   const [sameAsBilling, setSameAsBilling] = useState(true);
+  
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isAutoFilled, setIsAutoFilled] = useState(false);
   
   const [ewayBill, setEwayBill] = useState("");
   const [date, setDate] = useState(() => {
@@ -134,6 +138,66 @@ export default function InvoiceForm() {
       }
     ]);
   };
+
+  // Fetch customers on mount
+  React.useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await fetch("/api/customers");
+        const data = await res.json();
+        if (data.success) {
+          setCustomers(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch customers", error);
+      }
+    };
+    fetchCustomers();
+  }, []);
+
+  // Close suggestions on click outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".customer-search-container")) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredCustomers = useMemo(() => {
+    if (!customerName || isAutoFilled) return [];
+    return customers.filter(c => 
+      c.customerName.toLowerCase().includes(customerName.toLowerCase())
+    ).slice(0, 5);
+  }, [customerName, customers, isAutoFilled]);
+
+  const selectCustomer = (customer: any) => {
+    setCustomerName(customer.customerName);
+    setAddress(customer.address);
+    setGst(customer.gst || "");
+    setCustomerContact(customer.customerContact || "");
+    
+    // Also handle shipping if needed, but usually we just fill billing
+    // The user can then toggle "Same as Billing"
+    
+    setIsAutoFilled(true);
+    setShowSuggestions(false);
+  };
+
+  const clearCustomerDetails = () => {
+    // Keep customerName as per user request
+    setAddress("");
+    setGst("");
+    setCustomerContact("");
+    setIsAutoFilled(false);
+  };
+
+  const clearAddress = () => setAddress("");
+  const clearGst = () => setGst("");
+  const clearContact = () => setCustomerContact("");
 
   // Re-calculate all items when tax type changes (Interstate vs Intrastate)
   React.useEffect(() => {
@@ -312,19 +376,71 @@ export default function InvoiceForm() {
               Bill To
             </h3>
             <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Customer Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full border rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Billing Name"
-                />
+              <div className="relative customer-search-container">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xs font-semibold text-gray-500">Customer Name *</label>
+                  {isAutoFilled && (
+                    <button 
+                      type="button" 
+                      onClick={clearCustomerDetails}
+                      className="text-[10px] text-red-500 hover:text-red-700 flex items-center gap-1 font-bold"
+                    >
+                      <X size={12} /> CLEAR FETCHED DATA
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={customerName}
+                    onChange={(e) => {
+                      setCustomerName(e.target.value);
+                      setIsAutoFilled(false);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    className="w-full border rounded-md pl-9 pr-3 py-2 text-sm text-gray-900 bg-white focus:outline-blue-500 focus:ring-1 focus:ring-blue-500"
+                    placeholder="Search or Enter Billing Name"
+                  />
+                  <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
+                </div>
+
+                {showSuggestions && filteredCustomers.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                    <div className="bg-gray-50 px-3 py-1.5 border-b flex items-center gap-2">
+                      <History size={12} className="text-blue-500" />
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recent Businesses</span>
+                    </div>
+                    {filteredCustomers.map((c, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 flex flex-col border-b last:border-b-0 transition-colors"
+                        onClick={() => selectCustomer(c)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <User size={14} className="text-blue-600" />
+                          <span className="font-bold text-gray-800 text-sm">{c.customerName}</span>
+                        </div>
+                        <div className="flex flex-col ml-5 mt-1">
+                          <span className="text-[10px] text-gray-500 line-clamp-1">{c.address}</span>
+                          <span className="text-[10px] font-medium text-blue-600/70">{c.gst ? `GST: ${c.gst}` : "No GST"}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Billing Address *</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xs font-semibold text-gray-500">Billing Address *</label>
+                  {address && (
+                    <button type="button" onClick={clearAddress} className="text-[10px] text-gray-400 hover:text-red-500 flex items-center gap-1">
+                      <X size={10} /> CLEAR
+                    </button>
+                  )}
+                </div>
                 <textarea
                   required
                   value={address}
@@ -335,7 +451,14 @@ export default function InvoiceForm() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">GSTIN</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-semibold text-gray-500">GSTIN</label>
+                    {gst && (
+                      <button type="button" onClick={clearGst} className="text-[10px] text-gray-400 hover:text-red-500 flex items-center gap-1">
+                        <X size={10} /> CLEAR
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={gst}
@@ -345,7 +468,14 @@ export default function InvoiceForm() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Contact No</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-semibold text-gray-500">Contact No</label>
+                    {customerContact && (
+                      <button type="button" onClick={clearContact} className="text-[10px] text-gray-400 hover:text-red-500 flex items-center gap-1">
+                        <X size={10} /> CLEAR
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={customerContact}
