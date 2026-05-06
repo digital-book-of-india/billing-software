@@ -2,9 +2,10 @@
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Save, FileText } from "lucide-react";
+import { PlusCircle, Save, FileText, Building2 } from "lucide-react";
 import ItemRow from "./ItemRow";
 import { IInvoiceItem } from "@/models/Invoice";
+import { SELLERS, SellerKey } from "@/lib/constants";
 
 export default function InvoiceForm() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function InvoiceForm() {
   const [address, setAddress] = useState("");
   const [gst, setGst] = useState("");
   const [customerContact, setCustomerContact] = useState("");
+  
+  const [selectedSeller, setSelectedSeller] = useState<SellerKey>("JASWIK");
   
   const [shippingName, setShippingName] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
@@ -196,6 +199,12 @@ export default function InvoiceForm() {
           sgstTotal,
           igstTotal,
           grandTotal,
+          sellerName: SELLERS[selectedSeller].name,
+          sellerAddress: SELLERS[selectedSeller].address,
+          sellerGst: SELLERS[selectedSeller].gstin,
+          sellerContact: SELLERS[selectedSeller].contact,
+          sellerBankDetails: SELLERS[selectedSeller].bankDetails,
+          prefix: SELLERS[selectedSeller].prefix,
         }),
       });
 
@@ -248,6 +257,50 @@ export default function InvoiceForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Seller Selection Section */}
+        <div className="bg-gradient-to-r from-slate-50 to-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="text-sm font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2 mb-4">
+            <Building2 size={18} className="text-blue-600" />
+            Select Billing Company (Apni Company Chuno)
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {(Object.keys(SELLERS) as SellerKey[]).map((key) => (
+              <label
+                key={key}
+                className={`relative flex items-center p-4 cursor-pointer rounded-lg border-2 transition-all duration-200 ${
+                  selectedSeller === key
+                    ? "border-blue-600 bg-blue-50 ring-4 ring-blue-50"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="seller"
+                  value={key}
+                  checked={selectedSeller === key}
+                  onChange={() => setSelectedSeller(key)}
+                  className="sr-only"
+                />
+                <div className="flex flex-col gap-1">
+                  <span className={`font-bold text-sm ${selectedSeller === key ? "text-blue-700" : "text-gray-700"}`}>
+                    {SELLERS[key].name}
+                  </span>
+                  <span className="text-[10px] text-gray-500 font-medium">GSTIN: {SELLERS[key].gstin}</span>
+                </div>
+                {selectedSeller === key && (
+                  <div className="absolute top-2 right-2">
+                    <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 3L4.5 8.5L2 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                )}
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* Billing and Shipping Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Bill To Section */}

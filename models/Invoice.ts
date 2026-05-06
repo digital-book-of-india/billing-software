@@ -32,6 +32,16 @@ export interface IInvoice extends Document {
   sgstTotal: number;
   igstTotal: number;
   grandTotal: number;
+  sellerName: string;
+  sellerAddress: string;
+  sellerGst: string;
+  sellerContact: string;
+  sellerBankDetails: {
+    bankName: string;
+    accountNo: string;
+    ifsc: string;
+    vpa: string;
+  };
   createdAt: Date;
 }
 
@@ -67,6 +77,16 @@ const InvoiceSchema = new Schema<IInvoice>({
   sgstTotal: { type: Number, required: true },
   igstTotal: { type: Number, required: true, default: 0 },
   grandTotal: { type: Number, required: true },
+  sellerName: { type: String, required: true, default: "JASWIK TECHNOLOGIES INDIA" },
+  sellerAddress: { type: String, required: true },
+  sellerGst: { type: String, required: true },
+  sellerContact: { type: String, required: true },
+  sellerBankDetails: {
+    bankName: { type: String, required: true },
+    accountNo: { type: String, required: true },
+    ifsc: { type: String, required: true },
+    vpa: { type: String, required: true },
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -17,13 +17,15 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     const body = await req.json();
 
-    // Auto-generate invoice number with JTI/ prefix
-    const lastInvoice = await Invoice.findOne().sort({ createdAt: -1 });
-    let newInvoiceNumber = "JTI/0001";
+    // Auto-generate invoice number with prefix
+    const prefix = body.prefix || "JTI";
+    const lastInvoice = await Invoice.findOne({ invoiceNumber: new RegExp(`^${prefix}/`) }).sort({ createdAt: -1 });
+    let newInvoiceNumber = `${prefix}/0001`;
+    
     if (lastInvoice && lastInvoice.invoiceNumber) {
       const match = lastInvoice.invoiceNumber.match(/(\d+)$/);
       const lastNumber = match ? parseInt(match[1], 10) : 0;
-      newInvoiceNumber = `JTI/${String(lastNumber + 1).padStart(4, "0")}`;
+      newInvoiceNumber = `${prefix}/${String(lastNumber + 1).padStart(4, "0")}`;
     }
 
     const invoiceData = {

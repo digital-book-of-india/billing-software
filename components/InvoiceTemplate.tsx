@@ -22,6 +22,13 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) 
         fontFamily: "'Inter', 'Roboto', sans-serif"
       }}
     >
+      {/* Fallback for missing seller data in old invoices */}
+      {!data.sellerName && (
+        <div className="bg-yellow-50 text-yellow-800 p-2 text-[10px] mb-4 border border-yellow-200 rounded print:hidden">
+          Note: This is an old invoice. Seller details are showing defaults.
+        </div>
+      )}
+      
       {/* Header section */}
       <div className="flex justify-between items-start pb-4 mb-6" style={{ borderBottom: "2px solid #1e293b" }}>
         <div>
@@ -29,13 +36,12 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) 
           <p className="mt-1 font-medium text-xs" style={{ color: "#64748b" }}>Original for Recipient</p>
         </div>
         <div className="text-right">
-          <h2 className="text-2xl font-black tracking-tight" style={{ color: "#1e293b" }}>JASWIK TECHNOLOGIES INDIA</h2>
+          <h2 className="text-2xl font-black tracking-tight" style={{ color: "#1e293b" }}>{data.sellerName || "JASWIK TECHNOLOGIES INDIA"}</h2>
           <div className="text-[11px] leading-tight font-medium mt-1" style={{ color: "#475569" }}>
-            <p>Plot no: 142, B-block</p>
-            <p>kh no: 1175 Rangpuri EXTN, New Delhi-110037</p>
-            <p className="mt-1" style={{ color: "#111827", fontWeight: 700 }}>Contact: +91 9711933958</p>
+            <p>{data.sellerAddress || "Plot no: 142, B-block, kh no: 1175 Rangpuri EXTN, New Delhi-110037"}</p>
+            <p className="mt-1" style={{ color: "#111827", fontWeight: 700 }}>Contact: {data.sellerContact || "+91 9711933958"}</p>
             <p className="mt-1 font-semibold border-t pt-1 inline-block" style={{ borderColor: "#e2e8f0" }}>
-              GSTIN: <span style={{ color: "#1d4ed8" }}>07AEFPH1117L3ZO</span>, State: <span style={{ color: "#111827" }}>Delhi</span>
+              GSTIN: <span style={{ color: "#1d4ed8" }}>{data.sellerGst || "07AEFPH1117L3ZO"}</span>
             </p>
           </div>
         </div>
@@ -165,16 +171,16 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) 
   
           <div className="mb-4 border p-3 rounded" style={{ borderColor: "#e2e8f0", backgroundColor: "#f8fafc" }}>
             <h4 className="font-bold text-[10px] mb-2 uppercase tracking-wide border-b pb-1" style={{ color: "#64748b", borderColor: "#cbd5e1" }}>Bank Details:</h4>
-            <div className="text-sm font-bold mb-1" style={{ color: "#1f2937" }}>JASWIK TECHNOLOGIES INDIA</div>
+            <div className="text-sm font-bold mb-1" style={{ color: "#1f2937" }}>{data.sellerName || "JASWIK TECHNOLOGIES INDIA"}</div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
               <div style={{ color: "#64748b" }}>Bank Name:</div>
-              <div className="font-semibold" style={{ color: "#1f2937" }}>HDFC BANK, PATEL NAGAR (NEW DELHI)</div>
+              <div className="font-semibold" style={{ color: "#1f2937" }}>{data.sellerBankDetails?.bankName || "HDFC BANK, PATEL NAGAR (NEW DELHI)"}</div>
               <div style={{ color: "#64748b" }}>Account No:</div>
-              <div className="font-semibold" style={{ color: "#1f2937" }}>50200079881127</div>
+              <div className="font-semibold" style={{ color: "#1f2937" }}>{data.sellerBankDetails?.accountNo || "50200079881127"}</div>
               <div style={{ color: "#64748b" }}>IFSC Code:</div>
-              <div className="font-semibold" style={{ color: "#1f2937" }}>HDFC0000144</div>
+              <div className="font-semibold" style={{ color: "#1f2937" }}>{data.sellerBankDetails?.ifsc || "HDFC0000144"}</div>
               <div style={{ color: "#64748b" }}>VPA:</div>
-              <div className="font-semibold" style={{ color: "#1d4ed8" }}>9711933958@hdfcbank</div>
+              <div className="font-semibold" style={{ color: "#1d4ed8" }}>{data.sellerBankDetails?.vpa || "9711933958@hdfcbank"}</div>
             </div>
           </div>
   
@@ -185,7 +191,7 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) 
               <li>50% advance with work order.</li>
               <li>Interest @18% p.a. on delayed payments.</li>
               <li>Subject to Delhi jurisdiction.</li>
-              <li className="font-bold" style={{ color: "#1f2937" }}>PAYMENT IN FAVOUR OF M/S. JASWIK TECHNOLOGIES INDIA.</li>
+              <li className="font-bold" style={{ color: "#1f2937" }}>PAYMENT IN FAVOUR OF M/S. {data.sellerName}.</li>
             </ul>
           </div>
         </div>
@@ -222,7 +228,7 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) 
           </table>
           
           <div className="mt-8 text-center border-t border-dashed pt-4" style={{ borderColor: "#cbd5e1" }}>
-            <p className="font-bold text-[10px]" style={{ color: "#1e293b" }}>For JASWIK TECHNOLOGIES INDIA</p>
+            <p className="font-bold text-[10px]" style={{ color: "#1e293b" }}>For {data.sellerName}</p>
             <div className="h-12"></div>
             <p className="text-[10px] font-bold italic" style={{ color: "#64748b" }}>Authorized Signature</p>
           </div>
