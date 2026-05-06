@@ -19,13 +19,30 @@ export async function POST(req: NextRequest) {
 
     // Auto-generate invoice number with prefix
     const prefix = body.prefix || "JTI";
-    const lastInvoice = await Invoice.findOne({ invoiceNumber: new RegExp(`^${prefix}/`) }).sort({ createdAt: -1 });
-    let newInvoiceNumber = `${prefix}/0001`;
     
-    if (lastInvoice && lastInvoice.invoiceNumber) {
-      const match = lastInvoice.invoiceNumber.match(/(\d+)$/);
-      const lastNumber = match ? parseInt(match[1], 10) : 0;
-      newInvoiceNumber = `${prefix}/${String(lastNumber + 1).padStart(4, "0")}`;
+    // Find last invoice with this prefix
+    const lastInvoice = await Invoice.findOne({ 
+      invoiceNumber: new RegExp(`^${prefix}/`) 
+    }).sort({ createdAt: -1 });
+
+    let newInvoiceNumber;
+    if (prefix === "DBI") {
+      if (lastInvoice && lastInvoice.invoiceNumber) {
+        const match = lastInvoice.invoiceNumber.match(/(\d+)$/);
+        const lastNumber = match ? parseInt(match[1], 10) : 11110;
+        newInvoiceNumber = `${prefix}/${String(lastNumber + 1).padStart(5, "0")}`;
+      } else {
+        newInvoiceNumber = `${prefix}/11111`;
+      }
+    } else {
+      // Logic for JTI and others
+      if (lastInvoice && lastInvoice.invoiceNumber) {
+        const match = lastInvoice.invoiceNumber.match(/(\d+)$/);
+        const lastNumber = match ? parseInt(match[1], 10) : 0;
+        newInvoiceNumber = `${prefix}/${String(lastNumber + 1).padStart(4, "0")}`;
+      } else {
+        newInvoiceNumber = `${prefix}/0001`;
+      }
     }
 
     const invoiceData = {

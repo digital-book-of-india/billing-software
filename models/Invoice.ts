@@ -42,6 +42,7 @@ export interface IInvoice extends Document {
     ifsc: string;
     vpa: string;
   };
+  prefix: string;
   createdAt: Date;
 }
 
@@ -87,6 +88,7 @@ const InvoiceSchema = new Schema<IInvoice>({
     ifsc: { type: String, required: true },
     vpa: { type: String, required: true },
   },
+  prefix: { type: String, required: false },
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -50,8 +50,10 @@ export default function InvoiceForm() {
   // Determine if we should use IGST or CGST/SGST based on the state code (07 is Delhi)
   const isInterstate = useMemo(() => {
     const activeGst = sameAsBilling ? gst : (shippingGst || gst);
-    return activeGst.length >= 2 && !activeGst.startsWith("07");
-  }, [gst, shippingGst, sameAsBilling]);
+    const sellerGst = SELLERS[selectedSeller].gstin;
+    const sellerStateCode = sellerGst.substring(0, 2);
+    return activeGst.length >= 2 && !activeGst.startsWith(sellerStateCode);
+  }, [gst, shippingGst, sameAsBilling, selectedSeller]);
 
   const updateItem = (id: string, field: keyof IInvoiceItem, value: any) => {
     setItems((prev) =>
@@ -525,7 +527,7 @@ export default function InvoiceForm() {
 
         <div className="flex justify-between items-center mt-10 border-t pt-6">
           <p className="text-xs text-gray-400 italic font-medium">
-            * Indicates required fields. Tax will switch to IGST automatically for non-Delhi GSTINs.
+            * Indicates required fields. Tax will switch to IGST automatically for non-{SELLERS[selectedSeller].gstin.startsWith("09") ? "Uttar Pradesh" : "Delhi"} GSTINs.
           </p>
           <button
             type="submit"

@@ -8,6 +8,7 @@ import { IInvoice } from "@/models/Invoice";
 export default function HistoryPage() {
   const [invoices, setInvoices] = useState<IInvoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"JTI" | "DBI">("JTI");
 
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -25,6 +26,18 @@ export default function HistoryPage() {
     fetchInvoices();
   }, []);
 
+  const filteredInvoices = invoices.filter((invoice) => {
+    const isDBI = invoice.prefix === "DBI" || 
+                 invoice.invoiceNumber.startsWith("DBI") || 
+                 (invoice.sellerName && invoice.sellerName.includes("DIGITAL"));
+                     
+    if (activeTab === "DBI") {
+      return isDBI;
+    } else {
+      return !isDBI;
+    }
+  });
+
   return (
     <main className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
@@ -35,6 +48,30 @@ export default function HistoryPage() {
           <Link href="/" className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium">
             <ArrowLeft size={16} /> Back to Create
           </Link>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 bg-white p-1 rounded-lg shadow-sm border border-gray-100 w-fit">
+          <button
+            onClick={() => setActiveTab("JTI")}
+            className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${
+              activeTab === "JTI"
+                ? "bg-blue-600 text-white shadow-md"
+                : "text-gray-500 hover:bg-gray-50"
+            }`}
+          >
+            Jaswik Technologies
+          </button>
+          <button
+            onClick={() => setActiveTab("DBI")}
+            className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${
+              activeTab === "DBI"
+                ? "bg-emerald-600 text-white shadow-md"
+                : "text-gray-500 hover:bg-gray-50"
+            }`}
+          >
+            Digital Book of India
+          </button>
         </div>
 
         <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
@@ -56,14 +93,14 @@ export default function HistoryPage() {
                       Loading invoices...
                     </td>
                   </tr>
-                ) : invoices.length === 0 ? (
+                ) : filteredInvoices.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-8 text-center text-gray-500">
-                      No invoices found. Create one to get started.
+                      No invoices found for this company.
                     </td>
                   </tr>
                 ) : (
-                  invoices.map((invoice) => (
+                  filteredInvoices.map((invoice) => (
                     <tr key={String(invoice._id)} className="hover:bg-gray-50 transition-colors text-sm">
                       <td className="py-3 px-4 font-medium text-gray-900 border-b">
                         {invoice.invoiceNumber}

@@ -114,7 +114,9 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) 
             <tr>
               <td className="font-semibold py-1 uppercase" style={{ color: "#64748b" }}>Place of Supply:</td>
               <td className="text-right font-bold" style={{ color: "#111827" }}>
-                {data.shippingGst?.startsWith("07") || data.gst?.[0] === '0' && data.gst?.[1] === '7' ? "Delhi" : "Inter-State"}
+                {(data.shippingGst || data.gst)?.substring(0, 2) === (data.sellerGst || "07").substring(0, 2) 
+                  ? ((data.sellerGst || "07").startsWith("07") ? "Delhi" : "Uttar Pradesh") 
+                  : "Inter-State"}
               </td>
             </tr>
           </tbody>
@@ -190,7 +192,7 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) 
               <li>Discrepancy must be reported within 3 days.</li>
               <li>50% advance with work order.</li>
               <li>Interest @18% p.a. on delayed payments.</li>
-              <li>Subject to Delhi jurisdiction.</li>
+              <li>Subject to {data.sellerGst?.startsWith("09") ? "Uttar Pradesh" : "Delhi"} jurisdiction.</li>
               <li className="font-bold" style={{ color: "#1f2937" }}>PAYMENT IN FAVOUR OF M/S. {data.sellerName}.</li>
             </ul>
           </div>
