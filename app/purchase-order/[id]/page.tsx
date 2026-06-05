@@ -3,6 +3,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Printer, Download, ArrowLeft, Loader2 } from "lucide-react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import PurchaseOrderTemplate from "@/components/PurchaseOrderTemplate";
 import { IPurchaseOrder } from "@/models/PurchaseOrder";
 
@@ -43,28 +45,28 @@ export default function PurchaseOrderPreviewPage() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!po) return;
+    if (!po || !poRef.current) return;
     setDownloading(true);
 
     try {
-      // Use the professional backend PDF generator
-      const response = await fetch(`/api/generate-pdf?id=${params.id}&type=po`);
+      const element = poRef.current;
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
       
-      if (!response.ok) throw new Error("Backend failed");
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `PO_${po.orderNumber.replace(/[/]/g, "_")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
 
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`PO_${po.orderNumber.replace(/[/]/g, "_")}.pdf`);
     } catch (error: any) {
       console.error("PDF Error:", error);
-      alert(`Bhai, Server-side PDF generate nahi ho pa raha. Aap 'Print' button daba kar 'Save as PDF' karlo, wo best quality dega.`);
+      alert("Client-side PDF generation failed. Please use Print -> Save as PDF.");
     } finally {
       setDownloading(false);
     }
