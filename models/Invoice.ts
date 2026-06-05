@@ -43,6 +43,7 @@ export interface IInvoice extends Document {
     vpa: string;
   };
   prefix: string;
+  isEstimated?: boolean;
   createdAt: Date;
 }
 
@@ -89,6 +90,7 @@ const InvoiceSchema = new Schema<IInvoice>({
     vpa: { type: String, required: true },
   },
   prefix: { type: String, required: false },
+  isEstimated: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 

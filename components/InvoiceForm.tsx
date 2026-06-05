@@ -7,35 +7,69 @@ import ItemRow from "./ItemRow";
 import { IInvoiceItem } from "@/models/Invoice";
 import { SELLERS, SellerKey } from "@/lib/constants";
 
-export default function InvoiceForm() {
+export default function InvoiceForm({ initialData }: { initialData?: any }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [customerName, setCustomerName] = useState("");
-  const [address, setAddress] = useState("");
-  const [gst, setGst] = useState("");
-  const [customerContact, setCustomerContact] = useState("");
+  const [invoiceNumber, setInvoiceNumber] = useState(initialData?.invoiceNumber || "");
+  const [nextInvoiceLoading, setNextInvoiceLoading] = useState(!initialData);
+
+  const [customerName, setCustomerName] = useState(initialData?.customerName || "");
+  const [address, setAddress] = useState(initialData?.address || "");
+  const [gst, setGst] = useState(initialData?.gst || "");
+  const [customerContact, setCustomerContact] = useState(initialData?.customerContact || "");
   
-  const [selectedSeller, setSelectedSeller] = useState<SellerKey>("JASWIK");
+  const getInitialSellerKey = (): SellerKey => {
+    if (!initialData?.prefix) return "JASWIK";
+    const foundKey = (Object.keys(SELLERS) as SellerKey[]).find(
+      key => SELLERS[key].prefix === initialData.prefix
+    );
+    return foundKey || "JASWIK";
+  };
+  const [selectedSeller, setSelectedSeller] = useState<SellerKey>(getInitialSellerKey());
+  const [isEstimated, setIsEstimated] = useState<boolean>(initialData?.isEstimated || false);
+  React.useEffect(() => {
+    if (initialData) return; // Don't fetch next number if editing
+    const fetchNextInvoice = async () => {
+      try {
+        const prefix = SELLERS[selectedSeller].prefix;
+        const res = await fetch(`/api/next-number?type=invoice&prefix=${prefix}`);
+        const data = await res.json();
+        if (data.success) {
+          setInvoiceNumber(data.nextNumber);
+        }
+      } catch (err) {
+        console.error("Failed to fetch next Invoice:", err);
+      } finally {
+        setNextInvoiceLoading(false);
+      }
+    };
+    fetchNextInvoice();
+  }, [selectedSeller]);
   
-  const [shippingName, setShippingName] = useState("");
-  const [shippingAddress, setShippingAddress] = useState("");
-  const [shippingGst, setShippingGst] = useState("");
-  const [shippingContact, setShippingContact] = useState("");
-  const [sameAsBilling, setSameAsBilling] = useState(true);
+  const [shippingName, setShippingName] = useState(initialData?.shippingName || "");
+  const [shippingAddress, setShippingAddress] = useState(initialData?.shippingAddress || "");
+  const [shippingGst, setShippingGst] = useState(initialData?.shippingGst || "");
+  const [shippingContact, setShippingContact] = useState(initialData?.shippingContact || "");
+  const [sameAsBilling, setSameAsBilling] = useState(initialData ? (initialData.shippingName === initialData.customerName) : true);
   
   const [customers, setCustomers] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isAutoFilled, setIsAutoFilled] = useState(false);
+  const [isAutoFilled, setIsAutoFilled] = useState(!!initialData);
   
-  const [ewayBill, setEwayBill] = useState("");
+  const [ewayBill, setEwayBill] = useState(initialData?.ewayBill || "");
   const [date, setDate] = useState(() => {
+    if (initialData?.date) {
+      const d = new Date(initialData.date);
+      const offset = d.getTimezoneOffset() * 60000;
+      return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+    }
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
     const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 16);
     return localISOTime;
   });
 
-  const [items, setItems] = useState<IInvoiceItem[]>([
+  const [items, setItems] = useState<IInvoiceItem[]>(initialData?.items || [
     {
       id: crypto.randomUUID(),
       name: "",
@@ -239,18 +273,23 @@ export default function InvoiceForm() {
     e.preventDefault();
     setLoading(true);
 
-    const finalShippingName = sameAsBilling ? customerName : shippingName;
-    const finalShippingAddress = sameAsBilling ? address : shippingAddress;
+    const finalCustomerName = isEstimated && !customerName ? "Walk-in Customer" : customerName;
+    const finalAddress = isEstimated && !address ? "N/A" : address;
+    const finalShippingName = sameAsBilling ? finalCustomerName : shippingName;
+    const finalShippingAddress = sameAsBilling ? finalAddress : shippingAddress;
     const finalShippingGst = sameAsBilling ? gst : shippingGst;
     const finalShippingContact = sameAsBilling ? customerContact : shippingContact;
 
     try {
-      const response = await fetch("/api/invoice", {
-        method: "POST",
+      const url = initialData ? `/api/invoice/${initialData._id}` : "/api/invoice";
+      const response = await fetch(url, {
+        method: initialData ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerName,
-          address,
+          invoiceNumber,
+          date,
+          customerName: finalCustomerName,
+          address: finalAddress,
           gst,
           customerContact,
           shippingName: finalShippingName,
@@ -258,7 +297,6 @@ export default function InvoiceForm() {
           shippingGst: finalShippingGst,
           shippingContact: finalShippingContact,
           ewayBill,
-          date,
           items,
           subtotal,
           cgstTotal,
@@ -271,6 +309,7 @@ export default function InvoiceForm() {
           sellerContact: SELLERS[selectedSeller].contact,
           sellerBankDetails: SELLERS[selectedSeller].bankDetails,
           prefix: SELLERS[selectedSeller].prefix,
+          isEstimated,
         }),
       });
 
@@ -368,13 +407,29 @@ export default function InvoiceForm() {
         </div>
 
         {/* Billing and Shipping Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="flex items-center justify-between mb-6 bg-purple-50 p-4 rounded-xl border border-purple-100">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-purple-200 text-purple-700 rounded-full flex items-center justify-center font-bold">E</div>
+            <div>
+              <h3 className="text-sm font-bold text-purple-900">Estimated Bill Mode</h3>
+              <p className="text-[10px] text-purple-600">Create an informal estimate without customer details.</p>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked={isEstimated} onChange={(e) => setIsEstimated(e.target.checked)} className="sr-only peer" />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+          </label>
+        </div>
+
+        <div className={`grid grid-cols-1 ${!isEstimated ? "md:grid-cols-2" : ""} gap-8`}>
           {/* Bill To Section */}
           <div className="space-y-4">
-            <h3 className="text-md font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 border-b pb-1">
-              <span className="w-2 h-4 bg-blue-600 rounded-full"></span>
-              Bill To
-            </h3>
+              <div className="flex justify-between items-center border-b pb-1">
+                <h3 className="text-md font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-4 bg-blue-600 rounded-full"></span>
+                  Bill To
+                </h3>
+              </div>
             <div className="space-y-3">
               <div className="relative customer-search-container">
                 <div className="flex justify-between items-center mb-1">
@@ -442,7 +497,7 @@ export default function InvoiceForm() {
                   )}
                 </div>
                 <textarea
-                  required
+                  required={!isEstimated}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className="w-full border rounded-md px-3 py-2 text-sm h-20 text-gray-900 bg-white focus:outline-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -489,12 +544,13 @@ export default function InvoiceForm() {
           </div>
 
           {/* Ship To Section */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center border-b pb-1">
-              <h3 className="text-md font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                <span className="w-2 h-4 bg-emerald-500 rounded-full"></span>
-                Ship To
-              </h3>
+          {!isEstimated && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center border-b pb-1">
+                <h3 className="text-md font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-4 bg-emerald-500 rounded-full"></span>
+                  Ship To
+                </h3>
               <label className="flex items-center gap-2 text-xs font-medium text-blue-600 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -558,10 +614,29 @@ export default function InvoiceForm() {
               </div>
             )}
           </div>
+          )}
         </div>
 
         {/* Invoice Info Section */}
-        <div className="bg-blue-50/50 p-4 rounded-lg grid grid-cols-2 gap-4 border border-blue-100">
+        <div className="bg-blue-50/50 p-4 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-4 border border-blue-100">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Invoice Number *</label>
+            <div className="relative">
+              <input
+                type="text"
+                required
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+                className="w-full border-2 border-blue-200 rounded-md px-3 py-2 text-sm text-blue-900 bg-white font-black h-10 focus:outline-blue-500"
+                placeholder="JTI/INV/..."
+              />
+              {nextInvoiceLoading && (
+                <div className="absolute right-3 top-2.5">
+                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+            </div>
+          </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">Invoice Date *</label>
             <input
@@ -579,7 +654,7 @@ export default function InvoiceForm() {
               value={ewayBill}
               onChange={(e) => setEwayBill(e.target.value.toUpperCase())}
               className="w-full border rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:outline-blue-500 h-10 tracking-widest uppercase"
-              placeholder="OPTIONAL EWB NO"
+              placeholder="EWB..."
             />
           </div>
         </div>

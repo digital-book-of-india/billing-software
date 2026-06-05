@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
-import { Invoice } from "@/models/Invoice";
+import { PurchaseOrder } from "@/models/PurchaseOrder";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await params;
     await dbConnect();
-    
-    const invoice = await Invoice.findById(resolvedParams.id);
-    if (!invoice) {
-      return NextResponse.json({ success: false, error: "Invoice not found" }, { status: 404 });
+    const { id } = await params;
+    const po = await PurchaseOrder.findById(id);
+    if (!po) {
+      return NextResponse.json({ success: false, error: "PO not found" }, { status: 404 });
     }
-    
-    return NextResponse.json({ success: true, data: invoice }, { status: 200 });
+    return NextResponse.json({ success: true, data: po }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
@@ -29,9 +27,9 @@ export async function PUT(
     const { id } = await params;
     await dbConnect();
     const body = await req.json();
-    const invoice = await Invoice.findByIdAndUpdate(id, body, { new: true });
-    if (!invoice) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
-    return NextResponse.json({ success: true, data: invoice });
+    const po = await PurchaseOrder.findByIdAndUpdate(id, body, { new: true });
+    if (!po) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+    return NextResponse.json({ success: true, data: po });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
@@ -44,8 +42,8 @@ export async function DELETE(
   try {
     const { id } = await params;
     await dbConnect();
-    const invoice = await Invoice.findByIdAndDelete(id);
-    if (!invoice) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+    const po = await PurchaseOrder.findByIdAndDelete(id);
+    if (!po) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true, message: "Deleted" });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

@@ -5,9 +5,10 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
+    const type = searchParams.get('type') || 'invoice';
 
     if (!id) {
-      return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
     // Determine the base URL dynamically based on the request
@@ -19,8 +20,8 @@ export async function GET(req: Request) {
     const finalProtocol = isLocal ? protocol : 'https';
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${finalProtocol}://${host}`;
     
-    // Construct the URL to the invoice page
-    const invoiceUrl = `${baseUrl}/invoice/${id}`;
+    // Construct the URL to the page
+    const pageUrl = type === 'po' ? `${baseUrl}/purchase-order/${id}` : `${baseUrl}/invoice/${id}`;
 
     // Launch puppeteer
     const browser = await puppeteer.launch({
@@ -37,18 +38,23 @@ export async function GET(req: Request) {
         localStorage.setItem("isLoggedIn", "true");
       });
       
-      // Now navigate to the actual invoice page
-      await page.goto(invoiceUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+      // Now navigate to the actual page
+      await page.goto(pageUrl, { waitUntil: 'networkidle2', timeout: 60000 });
 
       // Inject CSS to ensure only the invoice is rendered and fits perfectly
       await page.addStyleTag({
         content: `
           @page { size: A4; margin: 0; }
           body, html { margin: 0 !important; padding: 0 !important; height: auto !important; min-height: auto !important; background: white !important; }
-          main { margin: 0 !important; padding: 0 !important; min-height: auto !important; height: auto !important; }
           .print\\:hidden { display: none !important; }
-          /* Hide everything except the invoice template container */
-          body > *:not(main), main > *:not(div:last-child) { display: none !important; }
+          
+          /* Hide everything except the marked PDF content */
+          body > * { display: none !important; }
+          body > main { display: block !important; }
+          main > * { display: none !important; }
+          main > [data-pdf-content="true"] { display: block !important; }
+          [data-pdf-content="true"] { padding: 0 !important; margin: 0 !important; width: 100% !important; }
+          [data-pdf-content="true"] > * { margin: 0 auto !important; shadow: none !important; box-shadow: none !important; }
         `
       });
 
@@ -72,7 +78,7 @@ export async function GET(req: Request) {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="Invoice_${id}.pdf"`,
+          'Content-Disposition': `attachment; filename="${type === 'po' ? 'PO' : 'Invoice'}_${id}.pdf"`,
         },
       });
     } catch (innerError: any) {

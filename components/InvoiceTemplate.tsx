@@ -32,8 +32,12 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) 
       {/* Header section */}
       <div className="flex justify-between items-start pb-4 mb-6" style={{ borderBottom: "2px solid #1e293b" }}>
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight uppercase" style={{ color: "#1e3a8a" }}>Tax Invoice</h1>
-          <p className="mt-1 font-medium text-xs" style={{ color: "#64748b" }}>Original for Recipient</p>
+          <h1 className="text-3xl font-extrabold tracking-tight uppercase" style={{ color: "#1e3a8a" }}>
+            {data.isEstimated ? "Estimated Tax Invoice" : "Tax Invoice"}
+          </h1>
+          {!data.isEstimated && (
+            <p className="mt-1 font-medium text-xs" style={{ color: "#64748b" }}>Original for Recipient</p>
+          )}
         </div>
         <div className="text-right">
           <h2 className="text-2xl font-black tracking-tight" style={{ color: "#1e293b" }}>{data.sellerName || "JASWIK TECHNOLOGIES INDIA"}</h2>
@@ -47,41 +51,43 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) 
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-4">
+      <div className={`grid ${data.isEstimated ? "grid-cols-1" : "grid-cols-2"} gap-6 mb-4`}>
         <div className="p-4 rounded border" style={{ backgroundColor: "#f8fafc", borderColor: "#f1f5f9" }}>
-          <h3 className="text-xs font-bold uppercase mb-2 tracking-wide border-b pb-1" style={{ color: "#64748b", borderColor: "#e2e8f0" }}>Bill To</h3>
-          <p className="font-bold text-sm uppercase" style={{ color: "#1f2937" }}>{data.customerName}</p>
-          <p className="whitespace-pre-wrap mt-1 leading-relaxed text-[11px]" style={{ color: "#4b5563" }}>{data.address}</p>
-          <div className="mt-2 space-y-1">
-            {data.gst && (
-              <p className="inline-block px-1 border rounded text-[10px] font-medium" style={{ color: "#1f2937", backgroundColor: "#ffffff", borderColor: "#e5e7eb" }}>
-                <span className="font-semibold mr-1" style={{ color: "#9ca3af" }}>GSTIN:</span>{data.gst}
-              </p>
-            )}
-            {data.customerContact && (
-              <p className="text-[10px] block" style={{ color: "#475569" }}>
-                <span className="font-semibold mr-1 uppercase" style={{ color: "#9ca3af" }}>Contact:</span>{data.customerContact}
-              </p>
-            )}
+            <h3 className="text-xs font-bold uppercase mb-2 tracking-wide border-b pb-1" style={{ color: "#64748b", borderColor: "#e2e8f0" }}>Bill To</h3>
+            <p className="font-bold text-sm uppercase" style={{ color: "#1f2937" }}>{data.customerName}</p>
+            <p className="whitespace-pre-wrap mt-1 leading-relaxed text-[11px]" style={{ color: "#4b5563" }}>{data.address}</p>
+            <div className="mt-2 space-y-1">
+              {data.gst && (
+                <p className="inline-block px-1 border rounded text-[10px] font-medium" style={{ color: "#1f2937", backgroundColor: "#ffffff", borderColor: "#e5e7eb" }}>
+                  <span className="font-semibold mr-1" style={{ color: "#9ca3af" }}>GSTIN:</span>{data.gst}
+                </p>
+              )}
+              {data.customerContact && (
+                <p className="text-[10px] block" style={{ color: "#475569" }}>
+                  <span className="font-semibold mr-1 uppercase" style={{ color: "#9ca3af" }}>Contact:</span>{data.customerContact}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="p-4 rounded border" style={{ backgroundColor: "#f8fafc", borderColor: "#f1f5f9" }}>
-          <h3 className="text-xs font-bold uppercase mb-2 tracking-wide border-b pb-1" style={{ color: "#10b981", borderColor: "#e2e8f0" }}>Ship To</h3>
-          <p className="font-bold text-sm uppercase" style={{ color: "#1f2937" }}>{data.shippingName || data.customerName}</p>
-          <p className="whitespace-pre-wrap mt-1 leading-relaxed text-[11px]" style={{ color: "#4b5563" }}>{data.shippingAddress || data.address}</p>
-          <div className="mt-2 space-y-1">
-            {(data.shippingGst || data.gst) && (
-              <p className="inline-block px-1 border rounded text-[10px] font-medium" style={{ color: "#1f2937", backgroundColor: "#ffffff", borderColor: "#e5e7eb" }}>
-                <span className="font-semibold mr-1" style={{ color: "#9ca3af" }}>GSTIN:</span>{data.shippingGst || data.gst}
-              </p>
-            )}
-            {(data.shippingContact || data.customerContact) && (
-              <p className="text-[10px] block" style={{ color: "#475569" }}>
-                <span className="font-semibold mr-1 uppercase" style={{ color: "#9ca3af" }}>Contact:</span>{data.shippingContact || data.customerContact}
-              </p>
-            )}
+        {!data.isEstimated && (
+          <div className="p-4 rounded border" style={{ backgroundColor: "#f8fafc", borderColor: "#f1f5f9" }}>
+            <h3 className="text-xs font-bold uppercase mb-2 tracking-wide border-b pb-1" style={{ color: "#10b981", borderColor: "#e2e8f0" }}>Ship To</h3>
+            <p className="font-bold text-sm uppercase" style={{ color: "#1f2937" }}>{data.shippingName || data.customerName}</p>
+            <p className="whitespace-pre-wrap mt-1 leading-relaxed text-[11px]" style={{ color: "#4b5563" }}>{data.shippingAddress || data.address}</p>
+            <div className="mt-2 space-y-1">
+              {(data.shippingGst || data.gst) && (
+                <p className="inline-block px-1 border rounded text-[10px] font-medium" style={{ color: "#1f2937", backgroundColor: "#ffffff", borderColor: "#e5e7eb" }}>
+                  <span className="font-semibold mr-1" style={{ color: "#9ca3af" }}>GSTIN:</span>{data.shippingGst || data.gst}
+                </p>
+              )}
+              {(data.shippingContact || data.customerContact) && (
+                <p className="text-[10px] block" style={{ color: "#475569" }}>
+                  <span className="font-semibold mr-1 uppercase" style={{ color: "#9ca3af" }}>Contact:</span>{data.shippingContact || data.customerContact}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-8 mb-4 p-4 border rounded" style={{ borderColor: "#e2e8f0", backgroundColor: "#f8fafc" }}>
@@ -135,25 +141,51 @@ const InvoiceTemplate = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) 
               <th className="py-2 px-1 border-r w-14 text-center" style={{ borderColor: "#475569", color: "#ffffff" }}>Unit</th>
               <th className="py-2 px-1 border-r w-20 text-right" style={{ borderColor: "#475569", color: "#ffffff" }}>Price</th>
               <th className="py-2 px-1 border-r w-20 text-right" style={{ borderColor: "#475569", backgroundColor: "#334155", color: "#ffffff" }}>Taxable</th>
-              <th className="py-2 px-1 border-r w-14 text-right" style={{ borderColor: "#475569", color: "#c7d2fe" }}>CGST</th>
-              <th className="py-2 px-1 border-r w-14 text-right" style={{ borderColor: "#475569", color: "#c7d2fe" }}>SGST</th>
-              <th className="py-2 px-1 border-r w-14 text-right" style={{ borderColor: "#475569", color: "#c7d2fe" }}>IGST</th>
-              <th className="py-2 px-1 text-right w-24" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.items.map((item, index) => (
-              <tr key={index} className="last:border-b-0 text-[10px]" style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: index % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
-                <td className="py-2 px-1 text-center border-r" style={{ borderColor: "#e2e8f0", color: "#64748b" }}>{index + 1}</td>
-                <td className="py-2 px-2 border-r font-medium" style={{ borderColor: "#e2e8f0", color: "#1f2937" }}>{item.name}</td>
-                <td className="py-2 px-1 border-r text-center" style={{ borderColor: "#e2e8f0", color: "#475569" }}>{item.hsn}</td>
-                <td className="py-2 px-1 border-r text-center font-semibold" style={{ borderColor: "#e2e8f0", color: "#000000" }}>{item.qty}</td>
-                <td className="py-2 px-1 border-r text-center font-medium" style={{ borderColor: "#e2e8f0", color: "#475569" }}>{item.unit}</td>
-                <td className="py-2 px-1 border-r text-right" style={{ borderColor: "#e2e8f0", color: "#000000" }}>{item.taxable.toFixed(2)}</td>
-                <td className="py-2 px-1 border-r text-right font-semibold" style={{ borderColor: "#e2e8f0", backgroundColor: "#f8fafc", color: "#1e293b" }}>{item.taxable.toFixed(2)}</td>
-                <td className="py-2 px-1 border-r text-right" style={{ borderColor: "#e2e8f0", color: "#475569" }}>{item.cgst.toFixed(2)}</td>
-                <td className="py-2 px-1 border-r text-right" style={{ borderColor: "#e2e8f0", color: "#475569" }}>{item.sgst.toFixed(2)}</td>
-                <td className="py-2 px-1 border-r text-right" style={{ borderColor: "#e2e8f0", color: item.igst > 0 ? "#1e40af" : "#475569", fontWeight: item.igst > 0 ? "bold" : "normal" }}>{item.igst.toFixed(2)}</td>
+            {(() => {
+              const sellerStateCode = (data.sellerGst || "07").substring(0, 2);
+              const customerStateCode = (data.shippingGst || data.gst || "07").substring(0, 2);
+              const isIntrastate = sellerStateCode === customerStateCode;
+              
+              if (isIntrastate) {
+                return (
+                  <>
+                    <th className="py-2 px-1 border-r w-14 text-right" style={{ borderColor: "#475569", color: "#c7d2fe" }}>CGST</th>
+                    <th className="py-2 px-1 border-r w-14 text-right" style={{ borderColor: "#475569", color: "#c7d2fe" }}>SGST</th>
+                  </>
+                );
+              } else {
+                return <th className="py-2 px-1 border-r w-14 text-right" style={{ borderColor: "#475569", color: "#c7d2fe" }}>IGST</th>;
+              }
+            })()}
+            <th className="py-2 px-1 text-right w-24" style={{ backgroundColor: "#0f172a", color: "#ffffff" }}>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.items.map((item, index) => (
+            <tr key={index} className="last:border-b-0 text-[10px]" style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: index % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+              <td className="py-2 px-1 text-center border-r" style={{ borderColor: "#e2e8f0", color: "#64748b" }}>{index + 1}</td>
+              <td className="py-2 px-2 border-r font-medium" style={{ borderColor: "#e2e8f0", color: "#1f2937" }}>{item.name}</td>
+              <td className="py-2 px-1 border-r w-16 text-center" style={{ borderColor: "#e2e8f0", color: "#475569" }}>{item.hsn}</td>
+              <td className="py-2 px-1 border-r w-10 text-center" style={{ borderColor: "#e2e8f0", color: "#000000" }}>{item.qty}</td>
+              <td className="py-2 px-1 border-r w-14 text-center" style={{ borderColor: "#e2e8f0", color: "#475569" }}>{item.unit}</td>
+              <td className="py-2 px-1 border-r w-20 text-right" style={{ borderColor: "#e2e8f0", color: "#000000" }}>{item.price.toFixed(2)}</td>
+              <td className="py-2 px-1 border-r w-20 text-right font-semibold" style={{ borderColor: "#e2e8f0", backgroundColor: "#f8fafc", color: "#1e293b" }}>{item.taxable.toFixed(2)}</td>
+              {(() => {
+                const sellerStateCode = (data.sellerGst || "07").substring(0, 2);
+                const customerStateCode = (data.shippingGst || data.gst || "07").substring(0, 2);
+                const isIntrastate = sellerStateCode === customerStateCode;
+                
+                if (isIntrastate) {
+                  return (
+                    <>
+                      <td className="py-2 px-1 border-r text-right" style={{ borderColor: "#e2e8f0", color: "#475569" }}>{item.cgst.toFixed(2)}</td>
+                      <td className="py-2 px-1 border-r text-right" style={{ borderColor: "#e2e8f0", color: "#475569" }}>{item.sgst.toFixed(2)}</td>
+                    </>
+                  );
+                } else {
+                  return <td className="py-2 px-1 border-r text-right" style={{ borderColor: "#e2e8f0", color: "#1e40af", fontWeight: "bold" }}>{item.igst.toFixed(2)}</td>;
+                }
+              })()}
                 <td className="py-2 px-1 text-right font-bold" style={{ backgroundColor: "#f1f5f9", color: "#111827" }}>{item.total.toFixed(2)}</td>
               </tr>
             ))}

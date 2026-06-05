@@ -10,6 +10,19 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"JTI" | "DBI">("JTI");
 
+  // Load active tab from localStorage on mount
+  useEffect(() => {
+    const savedTab = localStorage.getItem("invoiceActiveTab") as "JTI" | "DBI";
+    if (savedTab && (savedTab === "JTI" || savedTab === "DBI")) {
+      setActiveTab(savedTab);
+    }
+  }, []);
+
+  // Save active tab to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem("invoiceActiveTab", activeTab);
+  }, [activeTab]);
+
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
@@ -122,13 +135,41 @@ export default function HistoryPage() {
                         ₹{invoice.grandTotal.toFixed(2)}
                       </td>
                       <td className="py-3 px-4 text-center border-b">
-                        <Link
-                          href={`/invoice/${invoice._id}`}
-                          className="inline-flex items-center justify-center text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded-full transition-colors"
-                          title="View Invoice"
-                        >
-                          <Eye size={18} />
-                        </Link>
+                        <div className="flex items-center justify-center gap-2">
+                          <Link
+                            href={`/invoice/${invoice._id}`}
+                            className="inline-flex items-center justify-center text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded-full transition-colors"
+                            title="View Invoice"
+                          >
+                            <Eye size={18} />
+                          </Link>
+                          <Link
+                            href={`/invoice/edit/${invoice._id}`}
+                            className="inline-flex items-center justify-center text-amber-600 hover:text-amber-800 hover:bg-amber-50 p-2 rounded-full transition-colors"
+                            title="Edit Invoice"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </Link>
+                          <button
+                            onClick={() => {
+                              if (confirm("Bhai, pakka delete karna hai?")) {
+                                fetch(`/api/invoice/${invoice._id}`, { method: "DELETE" })
+                                  .then(res => res.json())
+                                  .then(data => {
+                                    if (data.success) {
+                                      setInvoices(prev => prev.filter(inv => inv._id !== invoice._id));
+                                    } else {
+                                      alert("Error: " + data.error);
+                                    }
+                                  });
+                              }
+                            }}
+                            className="inline-flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition-colors"
+                            title="Delete Invoice"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

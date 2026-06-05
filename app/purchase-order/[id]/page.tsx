@@ -3,39 +3,39 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Printer, Download, ArrowLeft, Loader2 } from "lucide-react";
-import InvoiceTemplate from "@/components/InvoiceTemplate";
-import { IInvoice } from "@/models/Invoice";
+import PurchaseOrderTemplate from "@/components/PurchaseOrderTemplate";
+import { IPurchaseOrder } from "@/models/PurchaseOrder";
 
-export default function InvoicePreviewPage() {
+export default function PurchaseOrderPreviewPage() {
   const params = useParams();
   const router = useRouter();
-  const invoiceRef = useRef<HTMLDivElement>(null);
+  const poRef = useRef<HTMLDivElement>(null);
 
-  const [invoice, setInvoice] = useState<IInvoice | null>(null);
+  const [po, setPo] = useState<IPurchaseOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!params.id) return;
 
-    const fetchInvoice = async () => {
+    const fetchPO = async () => {
       try {
-        const response = await fetch(`/api/invoice/${params.id}`);
+        const response = await fetch(`/api/purchase-order/${params.id}`);
         const data = await response.json();
         if (data.success) {
-          setInvoice(data.data);
+          setPo(data.data);
         } else {
-          alert("Invoice not found.");
-          router.push("/history");
+          alert("Purchase Order not found.");
+          router.push("/");
         }
       } catch (error) {
-        alert("Error loading invoice");
+        alert("Error loading Purchase Order");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchInvoice();
+    fetchPO();
   }, [params.id, router]);
 
   const handlePrint = () => {
@@ -43,12 +43,12 @@ export default function InvoicePreviewPage() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!invoice) return;
+    if (!po) return;
     setDownloading(true);
 
     try {
       // Use the professional backend PDF generator
-      const response = await fetch(`/api/generate-pdf?id=${params.id}&type=invoice`);
+      const response = await fetch(`/api/generate-pdf?id=${params.id}&type=po`);
       
       if (!response.ok) throw new Error("Backend failed");
       
@@ -56,7 +56,7 @@ export default function InvoicePreviewPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Invoice_${invoice.invoiceNumber.replace(/[/]/g, "_")}.pdf`;
+      a.download = `PO_${po.orderNumber.replace(/[/]/g, "_")}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -72,22 +72,21 @@ export default function InvoicePreviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-        <p className="text-gray-500 font-medium">Loading Invoice Data...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
+        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading PO Data...</p>
       </div>
     );
   }
 
-  if (!invoice) return null;
+  if (!po) return null;
 
   return (
-    <main className="min-h-screen py-8 print:py-0" style={{ backgroundColor: "#f3f4f6" }}>
-      {/* Controls Container (Hidden on Print) */}
-      <div className="max-w-4xl mx-auto mb-6 px-4 print:hidden flex flex-col sm:flex-row justify-between items-center gap-4">
+    <main className="min-h-screen py-8 print:py-0 bg-slate-100">
+      <div className="max-w-5xl mx-auto mb-6 px-4 print:hidden flex flex-col sm:flex-row justify-between items-center gap-4">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors p-2"
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-black uppercase text-xs transition-colors p-2"
         >
           <ArrowLeft size={18} /> Back
         </button>
@@ -95,28 +94,29 @@ export default function InvoicePreviewPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-white text-gray-800 border border-gray-300 px-4 py-2 rounded shadow-sm hover:bg-gray-50 transition-colors font-medium"
+            className="flex items-center gap-2 bg-white text-slate-800 border-2 border-slate-200 px-6 py-2.5 rounded-xl shadow-sm hover:bg-slate-50 transition-all font-black uppercase text-xs"
           >
-            <Printer size={18} /> Print Invoice
+            <Printer size={18} /> Print PO
           </button>
           <button
             onClick={handleDownloadPDF}
             disabled={downloading}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded shadow transition-colors hover:bg-blue-700 disabled:opacity-75 font-medium"
+            className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-100 transition-all hover:bg-indigo-700 disabled:opacity-75 font-black uppercase text-xs"
           >
             {downloading ? (
               <Loader2 size={18} className="animate-spin" />
             ) : (
               <Download size={18} />
             )}
-            {downloading ? "Generating PDF..." : "Download PDF"}
+            {downloading ? "Generating..." : "Download PDF"}
           </button>
         </div>
       </div>
 
-      {/* Invoice Wrapper */}
       <div className="overflow-x-auto pb-10 print:pb-0 px-2 sm:px-0 flex justify-center" data-pdf-content="true">
-        <InvoiceTemplate data={invoice} ref={invoiceRef} />
+        <div className="bg-white shadow-2xl shadow-slate-200 rounded-lg overflow-hidden">
+          <PurchaseOrderTemplate data={po} ref={poRef} />
+        </div>
       </div>
     </main>
   );
