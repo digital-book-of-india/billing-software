@@ -58,15 +58,14 @@ export default function InvoiceForm({ initialData }: { initialData?: any }) {
   
   const [ewayBill, setEwayBill] = useState(initialData?.ewayBill || "");
   const [date, setDate] = useState(() => {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const toLocalISO = (d: Date) => 
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
     if (initialData?.date) {
-      const d = new Date(initialData.date);
-      const offset = d.getTimezoneOffset() * 60000;
-      return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+      return toLocalISO(new Date(initialData.date));
     }
-    const now = new Date();
-    const offset = now.getTimezoneOffset() * 60000;
-    const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 16);
-    return localISOTime;
+    return toLocalISO(new Date());
   });
 
   const [items, setItems] = useState<IInvoiceItem[]>(initialData?.items || [
@@ -287,7 +286,7 @@ export default function InvoiceForm({ initialData }: { initialData?: any }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           invoiceNumber,
-          date,
+          date: date ? new Date(date).toISOString() : new Date().toISOString(),
           customerName: finalCustomerName,
           address: finalAddress,
           gst,

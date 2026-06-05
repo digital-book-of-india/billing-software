@@ -17,12 +17,14 @@ export default function PurchaseOrderForm({ initialData }: { initialData?: any }
   // PO Basic Info
   const [orderNumber, setOrderNumber] = useState(initialData?.orderNumber || "");
   const [date, setDate] = useState(() => {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const toLocalISO = (d: Date) => 
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
     if (initialData?.date) {
-      const d = new Date(initialData.date);
-      const offset = d.getTimezoneOffset() * 60000;
-      return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+      return toLocalISO(new Date(initialData.date));
     }
-    return new Date().toISOString().slice(0, 16);
+    return toLocalISO(new Date());
   });
 
   // Shipped & Invoice Locations
@@ -292,7 +294,7 @@ export default function PurchaseOrderForm({ initialData }: { initialData?: any }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderNumber,
-          date,
+          date: date ? new Date(date).toISOString() : new Date().toISOString(),
           supplierName,
           supplierCode,
           supplierAddress,
